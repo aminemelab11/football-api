@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # ⚽ Football Performance & Match Statistics API
 
 ## 📌 Overview
@@ -210,3 +211,7 @@ http://127.0.0.1:8000/docs
 Student coursework project – COMP3011 Web Services
 
 ---
+=======
+# football-api
+Football Performance &amp; Match Statistics API (COMP3011 Coursework)
+>>>>>>> b5a9a7e6967a7536adb9f3531dce0d9c9a2a1524
