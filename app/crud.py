@@ -28,11 +28,22 @@ def get_team(db: Session, team_id: int):
 
 def update_team(db: Session, team_id: int, team: schemas.TeamCreate):
     db_team = db.query(models.Team).filter(models.Team.id == team_id).first()
-    if db_team:
-        for key, value in team.model_dump().items():
-            setattr(db_team, key, value)
-        db.commit()
-        db.refresh(db_team)
+    if not db_team:
+        return None
+
+    existing_team = (
+        db.query(models.Team)
+        .filter(models.Team.name == team.name, models.Team.id != team_id)
+        .first()
+    )
+    if existing_team:
+        return "duplicate_name"
+
+    for key, value in team.model_dump().items():
+        setattr(db_team, key, value)
+
+    db.commit()
+    db.refresh(db_team)
     return db_team
 
 
@@ -70,11 +81,18 @@ def get_player(db: Session, player_id: int):
 
 def update_player(db: Session, player_id: int, player: schemas.PlayerCreate):
     db_player = db.query(models.Player).filter(models.Player.id == player_id).first()
-    if db_player:
-        for key, value in player.model_dump().items():
-            setattr(db_player, key, value)
-        db.commit()
-        db.refresh(db_player)
+    if not db_player:
+        return None
+
+    team = db.query(models.Team).filter(models.Team.id == player.team_id).first()
+    if not team:
+        return "team_not_found"
+
+    for key, value in player.model_dump().items():
+        setattr(db_player, key, value)
+
+    db.commit()
+    db.refresh(db_player)
     return db_player
 
 
@@ -117,11 +135,23 @@ def get_match(db: Session, match_id: int):
 
 def update_match(db: Session, match_id: int, match: schemas.MatchCreate):
     db_match = db.query(models.Match).filter(models.Match.id == match_id).first()
-    if db_match:
-        for key, value in match.model_dump().items():
-            setattr(db_match, key, value)
-        db.commit()
-        db.refresh(db_match)
+    if not db_match:
+        return None
+
+    if match.home_team_id == match.away_team_id:
+        return "same_team"
+
+    home_team = db.query(models.Team).filter(models.Team.id == match.home_team_id).first()
+    away_team = db.query(models.Team).filter(models.Team.id == match.away_team_id).first()
+
+    if not home_team or not away_team:
+        return "team_not_found"
+
+    for key, value in match.model_dump().items():
+        setattr(db_match, key, value)
+
+    db.commit()
+    db.refresh(db_match)
     return db_match
 
 
@@ -198,6 +228,7 @@ def get_leaderboard(db: Session):
 
     return leaderboard
 
+
 def get_team_stats(db: Session, team_id: int):
     team = db.query(models.Team).filter(models.Team.id == team_id).first()
     if not team:
@@ -247,6 +278,7 @@ def get_team_stats(db: Session, team_id: int):
 
     return stats
 
+
 def get_player_stats(db: Session, player_id: int):
     player = db.query(models.Player).filter(models.Player.id == player_id).first()
     if not player:
@@ -267,7 +299,8 @@ def get_player_stats(db: Session, player_id: int):
         "goals_per_game": round(goals_per_game, 2),
         "assists_per_game": round(assists_per_game, 2),
     }
-    
+
+
 def get_top_scorers(db: Session, limit: int = 10):
     players = (
         db.query(models.Player)

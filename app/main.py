@@ -50,8 +50,13 @@ def read_team(team_id: int, db: Session = Depends(get_db)):
 @app.put("/teams/{team_id}", response_model=schemas.Team)
 def update_team(team_id: int, team: schemas.TeamCreate, db: Session = Depends(get_db)):
     db_team = crud.update_team(db, team_id, team)
+
     if db_team is None:
         raise HTTPException(status_code=404, detail="Team not found")
+
+    if db_team == "duplicate_name":
+        raise HTTPException(status_code=400, detail="Another team with this name already exists")
+
     return db_team
 
 
@@ -91,8 +96,13 @@ def read_player(player_id: int, db: Session = Depends(get_db)):
 @app.put("/players/{player_id}", response_model=schemas.Player)
 def update_player(player_id: int, player: schemas.PlayerCreate, db: Session = Depends(get_db)):
     db_player = crud.update_player(db, player_id, player)
+
     if db_player is None:
         raise HTTPException(status_code=404, detail="Player not found")
+
+    if db_player == "team_not_found":
+        raise HTTPException(status_code=404, detail="Team not found for this player")
+
     return db_player
 
 
@@ -137,8 +147,16 @@ def read_match(match_id: int, db: Session = Depends(get_db)):
 @app.put("/matches/{match_id}", response_model=schemas.Match)
 def update_match(match_id: int, match: schemas.MatchCreate, db: Session = Depends(get_db)):
     db_match = crud.update_match(db, match_id, match)
+
     if db_match is None:
         raise HTTPException(status_code=404, detail="Match not found")
+
+    if db_match == "same_team":
+        raise HTTPException(status_code=400, detail="Home team and away team must be different")
+
+    if db_match == "team_not_found":
+        raise HTTPException(status_code=404, detail="One or both teams not found")
+
     return db_match
 
 
